@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Administrasi Guru</title>
+    <style>
+        :root { --sidebar-bg: linear-gradient(180deg, #2563eb 0%, #1e40af 100%); --main-bg: #f3f4f6; --text-dark: #1f2937; --text-light: #6b7280; --white: #ffffff; --primary: #2563eb; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: var(--main-bg); color: var(--text-dark); display: flex; min-height: 100vh; }
+        .sidebar { width: 260px; background: var(--sidebar-bg); color: var(--white); display: flex; flex-direction: column; position: fixed; height: 100vh; transition: transform 0.3s ease; z-index: 1000; }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-header .logo { font-size: 24px; margin-bottom: 5px; }
+        .sidebar-header h2 { font-size: 18px; font-weight: 600; }
+        .sidebar-header p { font-size: 12px; opacity: 0.8; margin-top: 5px; }
+        .nav-menu { flex: 1; padding: 20px 0; overflow-y: auto; }
+        .nav-item { display: flex; align-items: center; padding: 12px 20px; color: rgba(255,255,255,0.8); text-decoration: none; cursor: pointer; transition: all 0.2s; font-size: 14px; }
+        .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.15); color: var(--white); border-left: 4px solid var(--white); }
+        .nav-item .icon { margin-right: 15px; font-size: 18px; width: 24px; text-align: center; }
+        .sidebar-footer { padding: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .user-info { display: flex; align-items: center; margin-bottom: 10px; }
+        .user-avatar { width: 35px; height: 35px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px; font-weight: bold; }
+        .user-details h4 { font-size: 14px; } .user-details p { font-size: 11px; opacity: 0.7; }
+        .btn-logout { width: 100%; padding: 8px; background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .main-content { margin-left: 260px; flex: 1; padding: 30px; width: calc(100% - 260px); }
+        .top-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;}
+        .top-header h1 { font-size: 24px; color: var(--text-dark); } .top-header p { color: var(--text-light); font-size: 14px; margin-top: 5px; }
+        .content-section { display: none; animation: fadeIn 0.3s; } .content-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .form-card { background: var(--white); padding: 25px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .form-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
+        .form-group { flex: 1; min-width: 200px; display: flex; flex-direction: column; }
+        .form-group label { font-weight: 600; font-size: 13px; margin-bottom: 5px; color: var(--text-dark); }
+        .form-group input, .form-group select, .form-group textarea { padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; width: 100%; }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+        .btn-primary { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; }
+        .btn-success { background: #16a34a; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; width: 100%; margin-top: 10px;}
+        .btn-download { background: #f59e0b; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; }
+        .siswa-row { display: flex; justify-content: space-between; align-items: center; background: #f9fafb; padding: 10px 15px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #e5e7eb; }
+        .siswa-nama { font-weight: 600; font-size: 14px; flex: 1; }
+        .status-group { display: flex; gap: 5px; }
+        .status-btn { padding: 5px 10px; border: 1px solid #ddd; background: white; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .status-btn.active.h { background: #dcfce7; color: #166534; border-color: #16a34a; }
+        .status-btn.active.s { background: #dbeafe; color: #1e40af; border-color: #3b82f6; }
+        .status-btn.active.i { background: #fef3c7; color: #92400e; border-color: #f59e0b; }
+        .status-btn.active.a { background: #fee2e2; color: #991b1b; border-color: #ef4444; }
+        .menu-toggle { display: none; position: fixed; top: 15px; left: 15px; z-index: 1001; background: var(--primary); color: white; border: none; padding: 10px 15px; border-radius: 8px; font-size: 18px; cursor: pointer; }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); width: 260px; } .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; width: 100%; padding: 20px; padding-top: 70px; } .menu-toggle { display: block; }
+        }
+    </style>
+</head>
+<body>
+    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header"><div class="logo">🏫</div><h2>Administrasi Guru</h2><p>SMPN 54 Muaro Jambi</p></div>
+        <nav class="nav-menu">
+            <div class="nav-item active" onclick="showSection('dashboard', this)"><span class="icon">🏠</span> Dashboard</div>
+            <div class="nav-item" onclick="showSection('absensi', this)"><span class="icon">📋</span> Absensi</div>
+            <div class="nav-item" onclick="showSection('jurnal', this)"><span class="icon">📖</span> Jurnal Mengajar</div>
+            <div class="nav-item" onclick="showSection('bk', this)"><span class="icon">🤝</span> Laporan BK</div>
+            <div class="nav-item" onclick="showSection('siswa', this)"><span class="icon">👥</span> Data Siswa</div> <!-- BARU -->
+        </nav>
+        <div class="sidebar-footer"><div class="user-info"><div class="user-avatar">N</div><div class="user-details"><h4>Nanang</h4><p>Guru BK & Mapel</p></div></div><button class="btn-logout">Keluar</button></div>
+    </aside>
+
+    <main class="main-content">
+        <!-- DASHBOARD -->
+        <div id="dashboard" class="content-section active">
+            <div class="top-header"><h1>Dashboard</h1><p>Selamat datang di Sistem Administrasi Guru</p></div>
+            <div class="form-card"><h3>📊 Statistik Cepat</h3><p style="margin-top:10px; color:var(--text-light);">Gunakan menu di samping untuk mulai menginput data.</p></div>
+        </div>
+
+        <!-- ABSENSI -->
+        <div id="absensi" class="content-section">
+            <div class="top-header">
+                <div><h1>📋 Input Absensi Harian</h1><p>Catat kehadiran siswa dengan cepat</p></div>
+                <button class="btn-download" onclick="downloadLaporan('absensi')">⬇️ Download Laporan</button> <!-- BARU -->
+            </div>
+            <div class="form-card">
+                <div class="form-row">
+                    <div class="form-group"><label>Pilih Kelas</label><select id="kelasAbsen"><option value="">-- Memuat Kelas... --</option></select></div>
+                    <div class="form-group"><label>Tanggal</label><input type="date" id="tanggalAbsen"></div>
+                    <div class="form-group" style="justify-content: flex-end;"><button class="btn-primary" onclick="muatSiswa()">🔄 Muat Siswa</button></div>
+                </div>
+            </div>
+            <div id="daftarSiswaContainer" style="display:none;">
+                <div class="form-card">
+                    <h3 style="margin-bottom:15px;">Daftar Siswa: <span id="labelKelas" style="color:var(--primary);"></span></h3>
+                    <div id="daftarSiswa"></div>
+                    <div class="form-group" style="margin-top:20px;"><label>Keterangan Umum</label><textarea id="keteranganAbsen" rows="2"></textarea></div>
+                    <button class="btn-success" onclick="simpanAbsensi()" id="btnSimpanAbsen">💾 Simpan Semua Absensi</button>
+                    <p id="statusAbsen" style="text-align:center; margin-top:10px; font-weight:bold;"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- JURNAL -->
+        <div id="jurnal" class="content-section">
+            <div class="top-header">
+                <div><h1>📖 Jurnal Mengajar</h1><p>Catat agenda mengajar harian Anda</p></div>
+                <button class="btn-download" onclick="downloadLaporan('jurnal')">⬇️ Download Laporan</button> <!-- BARU -->
+            </div>
+            <div class="form-card">
+                <form id="formJurnal">
+                    <div class="form-row">
+                        <div class="form-group"><label>Tanggal</label><input type="date" id="jurnalTanggal" required></div>
+                        <div class="form-group"><label>Hari</label><select id="jurnalHari" required><option>Senin</option><option>Selasa</option><option>Rabu</option><option>Kamis</option><option>Jumat</option><option>Sabtu</option></select></div>
+                        <div class="form-group"><label>Jam Ke-</label><input type="text" id="jurnalJam" placeholder="Cth: 1-2" required></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Mata Pelajaran</label><input type="text" id="jurnalMapel" required></div>
+                        <div class="form-group"><label>Kelas</label><input type="text" id="jurnalKelas" placeholder="Cth: X-A" required></div>
+                    </div>
+                    <div class="form-group"><label>Materi Pembelajaran</label><textarea id="jurnalMateri" required></textarea></div>
+                    <div class="form-group"><label>Kendala (Opsional)</label><textarea id="jurnalKendala"></textarea></div>
+                    <div class="form-group"><label>Foto Bukti (Opsional)</label><input type="file" id="jurnalFoto" accept="image/*"></div>
+                    <button type="submit" class="btn-success">💾 Simpan Jurnal</button>
+                    <p id="statusJurnal" style="text-align:center; margin-top:10px; font-weight:bold;"></p>
+                </form>
+            </div>
+        </div>
+
+        <!-- BK -->
+        <div id="bk" class="content-section">
+            <div class="top-header">
+                <div><h1>🤝 Laporan BK</h1><p>Input laporan bimbingan konseling</p></div>
+                <button class="btn-download" onclick="downloadLaporan('bk')">⬇️ Download Laporan</button> <!-- BARU -->
+            </div>
+            <div class="form-card">
+                <form id="formBK">
+                    <div class="form-row">
+                        <div class="form-group"><label>Tanggal</label><input type="date" id="bkTanggal" required></div>
+                        <div class="form-group"><label>Nama Siswa</label><input type="text" id="bkNama" required></div>
+                        <div class="form-group"><label>NISN</label><input type="text" id="bkNisn"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Kelas</label><input type="text" id="bkKelas" required></div>
+                        <div class="form-group"><label>Konseling Ke-</label><input type="number" id="bkKonsKe" value="1" min="1"></div>
+                        <div class="form-group"><label>Jenis Layanan</label><select id="bkJenisLayanan" required><option value="">Memuat...</option></select></div>
+                    </div>
+                    <div class="form-group"><label>Identifikasi Masalah</label><textarea id="bkIdentifikasi" required></textarea></div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Pendekatan</label><select id="bkPendekatan"><option>Direktif</option><option>Non-Direktif</option><option>Ekletik</option></select></div>
+                        <div class="form-group"><label>Teknik</label><select id="bkTeknik"><option>Konseling</option><option>Home Room</option><option>Alih Tangan</option></select></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Komponen Layanan</label><select id="bkKomponen"><option>Dasar</option><option>Pendukung</option><option>Perencanaan</option><option>Responsif</option></select></div>
+                        <div class="form-group"><label>Bidang Bimbingan</label><select id="bkBidang"><option>Pribadi</option><option>Sosial</option><option>Belajar</option><option>Karir</option></select></div>
+                    </div>
+                    <div class="form-group"><label>Pihak Terlibat</label><input type="text" id="bkPihakTerlibat" placeholder="Contoh: Orang Tua, Wali Kelas, Psikolog"></div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Waktu (Menit)</label><input type="number" id="bkWaktu" value="15"></div>
+                        <div class="form-group"><label>Tempat</label><input type="text" id="bkTempat" value="Ruang BK"></div>
+                    </div>
+                    <div class="form-group"><label>Penyebab Masalah</label><textarea id="bkPenyebab"></textarea></div>
+                    <div class="form-group"><label>Alternatif Pemecahan</label><textarea id="bkAlternatif"></textarea></div>
+                    <div class="form-group"><label>Hasil / Tindak Lanjut</label><textarea id="bkHasil"></textarea></div>
+                    <div class="form-group"><label>Foto Bukti (Opsional)</label><input type="file" id="bkFoto" accept="image/*"></div>
+                    <button type="submit" class="btn-success">💾 Simpan Laporan BK</button>
+                    <p id="statusBK" style="text-align:center; margin-top:10px; font-weight:bold;"></p>
+                </form>
+            </div>
+        </div>
+
+        <!-- DATA SISWA (BARU) -->
+        <div id="siswa" class="content-section">
+            <div class="top-header"><div><h1>👥 Input Data Siswa</h1><p>Tambahkan siswa baru ke database</p></div></div>
+            <div class="form-card">
+                <h3 style="margin-bottom: 15px;">Tambah Siswa Massal (Cepat)</h3>
+                <p style="color: var(--text-light); font-size: 13px; margin-bottom: 15px;">Pilih kelas, lalu paste daftar nama siswa di bawah ini (satu nama per baris).</p>
+                <div class="form-row">
+                    <div class="form-group"><label>Kelas</label><input type="text" id="inputKelasSiswa" placeholder="Contoh: X-A"></div>
+                </div>
+                <div class="form-group">
+                    <label>Daftar Nama Siswa</label>
+                    <textarea id="inputNamaSiswa" rows="10" placeholder="Ahmad Fauzi&#10;Budi Santoso&#10;Citra Dewi"></textarea>
+                </div>
+                <button class="btn-success" onclick="simpanSiswaMassal()" id="btnSimpanSiswa">💾 Simpan Daftar Siswa</button>
+                <p id="statusSiswa" style="text-align:center; margin-top:10px; font-weight:bold;"></p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwoPJ_cAwBiz68ezpXQNd8iatUH2IlIpsUlVEH1e4pmHjO8EzybwfjCgi1m-jHSJmgVZQ/exec'; // ⚠️ GANTI DENGAN URL ANDA!
+
+        function showSection(id, el) {
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            if(el) el.classList.add('active');
+            if(window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
+        }
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('tanggalAbsen').valueAsDate = new Date();
+            document.getElementById('jurnalTanggal').valueAsDate = new Date();
+            document.getElementById('bkTanggal').valueAsDate = new Date();
+            muatKelasAbsen();
+            muatJenisLayananBK();
+        });
+
+        // --- ABSENSI ---
+        function muatKelasAbsen() {
+            fetch(`${API_URL}?aksi=ambil_siswa`).then(r => r.json()).then(d => {
+                if(d.status === 'success') {
+                    const sel = document.getElementById('kelasAbsen');
+                    sel.innerHTML = '<option value="">-- Pilih Kelas --</option>';
+                    d.kelas.forEach(k => sel.innerHTML += `<option value="${k}">${k}</option>`);
+                }
+            });
+        }
+        function muatSiswa() {
+            const kelas = document.getElementById('kelasAbsen').value;
+            if(!kelas) return alert('Pilih kelas dulu!');
+            document.getElementById('labelKelas').innerText = kelas;
+            document.getElementById('daftarSiswa').innerHTML = '⏳ Memuat...';
+            document.getElementById('daftarSiswaContainer').style.display = 'block';
+            fetch(`${API_URL}?aksi=ambil_siswa&kelas=${kelas}`).then(r => r.json()).then(d => {
+                const box = document.getElementById('daftarSiswa'); box.innerHTML = '';
+                if(d.siswa.length === 0) box.innerHTML = 'Tidak ada siswa.';
+                d.siswa.forEach((nama, i) => {
+                    box.innerHTML += `<div class="siswa-row"><div class="siswa-nama">${i+1}. ${nama}</div><div class="status-group"><button type="button" class="status-btn h active" onclick="setStatus(this,'Hadir')">H</button><button type="button" class="status-btn s" onclick="setStatus(this,'Sakit')">S</button><button type="button" class="status-btn i" onclick="setStatus(this,'Izin')">I</button><button type="button" class="status-btn a" onclick="setStatus(this,'Alpha')">A</button></div></div>`;
+                });
+            });
+        }
+        function setStatus(btn, status) {
+            const group = btn.parentElement; group.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active'); group.setAttribute('data-status', status);
+        }
+        function simpanAbsensi() {
+            const kelas = document.getElementById('kelasAbsen').value, tanggal = document.getElementById('tanggalAbsen').value, ket = document.getElementById('keteranganAbsen').value;
+            const rows = document.querySelectorAll('.siswa-row'), btn = document.getElementById('btnSimpanAbsen'), status = document.getElementById('statusAbsen');
+            btn.disabled = true; btn.innerText = '⏳ Menyimpan...'; let i = 0;
+            function next() {
+                if(i >= rows.length) { btn.disabled = false; btn.innerText = '💾 Simpan Semua Absensi'; status.style.color='green'; status.innerText = `✅ Berhasil menyimpan ${rows.length} data!`; return; }
+                const row = rows[i], nama = row.querySelector('.siswa-nama').innerText.split('. ')[1], st = row.querySelector('.status-group').getAttribute('data-status') || 'Hadir';
+                fetch(API_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify({aksi:'absensi', data:[tanggal, nama, kelas, st, ket], foto:'', namaFile:''}) })
+                .then(() => { i++; next(); }).catch(() => { status.style.color='red'; status.innerText='❌ Error!'; btn.disabled=false; });
+            }
+            next();
+        }
+
+        // --- JURNAL ---
+        document.getElementById('formJurnal').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button'), status = document.getElementById('statusJurnal');
+            btn.disabled = true; btn.innerText = '⏳ Menyimpan...';
+            const data = [document.getElementById('jurnalTanggal').value, document.getElementById('jurnalHari').value, document.getElementById('jurnalJam').value, document.getElementById('jurnalMapel').value, document.getElementById('jurnalKelas').value, document.getElementById('jurnalMateri').value, document.getElementById('jurnalKendala').value];
+            kirimData('jurnal', data, 'jurnalFoto', btn, status);
+        });
+
+        // --- BK ---
+        function muatJenisLayananBK() {
+            fetch(`${API_URL}?aksi=ambil_jenis_layanan`).then(r => r.json()).then(d => {
+                if(d.status === 'success') {
+                    const sel = document.getElementById('bkJenisLayanan'); sel.innerHTML = '<option value="">-- Pilih Layanan --</option>';
+                    d.jenisLayanan.forEach(j => sel.innerHTML += `<option value="${j}">${j}</option>`);
+                }
+            });
+        }
+        document.getElementById('formBK').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button'), status = document.getElementById('statusBK');
+            btn.disabled = true; btn.innerText = '⏳ Menyimpan...';
+            const data = [document.getElementById('bkTanggal').value, document.getElementById('bkNama').value, document.getElementById('bkNisn').value, document.getElementById('bkKonsKe').value, document.getElementById('bkKelas').value, document.getElementById('bkIdentifikasi').value, document.getElementById('bkPendekatan').value, document.getElementById('bkTeknik').value, document.getElementById('bkKomponen').value, document.getElementById('bkBidang').value, document.getElementById('bkPihakTerlibat').value, document.getElementById('bkWaktu').value, document.getElementById('bkTempat').value, document.getElementById('bkPenyebab').value, document.getElementById('bkAlternatif').value, document.getElementById('bkHasil').value];
+            kirimData('bk', data, 'bkFoto', btn, status);
+        });
+
+        // --- DATA SISWA MASSAL (BARU) ---
+        function simpanSiswaMassal() {
+            const kelas = document.getElementById('inputKelasSiswa').value.trim();
+            const namaText = document.getElementById('inputNamaSiswa').value.trim();
+            const btn = document.getElementById('btnSimpanSiswa'), status = document.getElementById('statusSiswa');
+            
+            if(!kelas || !namaText) return alert('Kelas dan Nama Siswa wajib diisi!');
+            
+            // Ubah teks menjadi array [kelas, nama]
+            const namaList = namaText.split('\n').filter(n => n.trim() !== '');
+            const dataPayload = namaList.map(n => [kelas, n.trim()]);
+            
+            btn.disabled = true; btn.innerText = '⏳ Menyimpan...';
+            fetch(API_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify({aksi:'tambah_siswa', data:dataPayload, foto:'', namaFile:''}) })
+            .then(() => {
+                btn.disabled = false; btn.innerText = '💾 Simpan Daftar Siswa';
+                status.style.color='green'; status.innerText = `✅ Berhasil menambahkan ${namaList.length} siswa ke kelas ${kelas}!`;
+                document.getElementById('inputNamaSiswa').value = '';
+                muatKelasAbsen(); // Refresh dropdown kelas di absensi
+            })
+            .catch(() => { btn.disabled = false; btn.innerText = '💾 Simpan Daftar Siswa'; status.style.color='red'; status.innerText = '❌ Gagal menyimpan!'; });
+        }
+
+        // --- DOWNLOAD LAPORAN (BARU) ---
+        function downloadLaporan(jenis) {
+            const btn = event.target;
+            btn.innerText = '⏳ Mengunduh...'; btn.disabled = true;
+            
+            fetch(`${API_URL}?aksi=ambil_data_${jenis}`).then(r => r.json()).then(d => {
+                if(d.status === 'success') {
+                    let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // \uFEFF untuk support Excel UTF-8
+                    d.data.forEach(row => {
+                        // Escape koma dan kutip agar tidak merusak format CSV
+                        let rowStr = row.map(cell => {
+                            let val = String(cell).replace(/"/g, '""');
+                            return `"${val}"`;
+                        }).join(",");
+                        csvContent += rowStr + "\r\n";
+                    });
+                    const encodedUri = encodeURI(csvContent);
+                    const link = document.createElement("a");
+                    link.setAttribute("href", encodedUri);
+                    link.setAttribute("download", `Laporan_${jenis}_${new Date().toISOString().slice(0,10)}.csv`);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+                btn.innerText = '⬇️ Download Laporan'; btn.disabled = false;
+            }).catch(() => { alert('Gagal mengunduh data!'); btn.innerText = '⬇️ Download Laporan'; btn.disabled = false; });
+        }
+
+        // --- FUNGSI KIRIM DATA UMUM ---
+        function kirimData(aksi, data, fotoId, btn, statusEl) {
+            const fileInput = document.getElementById(fotoId);
+            if(fileInput.files.length > 0) {
+                const reader = new FileReader();
+                reader.onload = function(e) { doFetch(aksi, data, e.target.result, `foto_${aksi}_${Date.now()}.jpg`, btn, statusEl); };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else { doFetch(aksi, data, '', '', btn, statusEl); }
+        }
+        function doFetch(aksi, data, foto, namaFile, btn, statusEl) {
+            fetch(API_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify({aksi, data, foto, namaFile}) })
+            .then(() => { btn.disabled = false; btn.innerText = '💾 Simpan'; statusEl.style.color='green'; statusEl.innerText = '✅ Data berhasil disimpan!'; document.getElementById(aksi === 'jurnal' ? 'formJurnal' : 'formBK').reset(); })
+            .catch(() => { btn.disabled = false; btn.innerText = '💾 Simpan'; statusEl.style.color='red'; statusEl.innerText = '❌ Gagal menyimpan!'; });
+        }
+    </script>
+</body>
+</html>
